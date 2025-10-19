@@ -38,16 +38,34 @@ class TimeWorkDayManager:
         self.set_current_period_of_time(TimesOfDay.evening)
         return f"({self.period_of_time.strftime("%H:%M:%S")}) | Приятного вечера! Конец рабочего дня)"
     
+
+    def get_hour_minut_defferent_from_datetime(self, started_date: str, started_time: str, ended_date: str, ended_time: str) -> tuple:
+        datetime_start = datetime.strptime(started_date + " " + started_time, "%d/%m/%Y %H:%M:%S")
+        datetime_end = datetime.strptime(ended_date + " " + ended_time, "%d/%m/%Y %H:%M:%S")
+
+        total_seconds = datetime_end - datetime_start
+        hours = total_seconds.seconds // 3600
+        minutes = (total_seconds.seconds % 3600 // 60)
+        #f"Длительность времени: часы: {hours}; минут: {minutes}"
+        return { "hours": hours, "minutes": minutes }
+
+    
     def get_statistic_of_day(self) -> str:
         self.local_data_work_time = self.read_from_buffer(self.buffer_link)
         
         started_formated_time = self.local_data_work_time["start_day_time"]
         ended_formated_time = self.local_data_work_time["end_day_time"]
         
-        message = f"Результаты работы дня:\nНачало работы: {started_formated_time}\nКонец работы: {ended_formated_time}"
+        message = f"Результаты работы дня:\nНачало работы: {started_formated_time}\nКонец работы: {ended_formated_time}\n"
+        date_diff = self.get_hour_minut_defferent_from_datetime(
+            self.local_data_work_time["start_day_date"],
+            self.local_data_work_time["start_day_time"],
+            self.local_data_work_time["end_day_date"],
+            self.local_data_work_time["end_day_time"]
+        ) 
+        message += f"Длительность рабочего дня: {date_diff["hours"]}:{date_diff["minutes"]}"
         return message
     
-    #.strftime("%H:%M:%S-%d.%m.%Y")
     def set_current_period_of_time(self, time_of_day: TimesOfDay):
         self.local_data_work_time = self.read_from_buffer(self.buffer_link)
 
