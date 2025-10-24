@@ -21,14 +21,15 @@ class TGNavigationMenuManager():
         self.navIndex = 0
 
     def navigation(self, message, telebot: TeleBot):
+        timework_maneger = TimeWorkDayManager(message.from_user.username)
         match message.text:
             case "Доброе утро (Поставить счётчик времени)":
-                telebot.send_message(message.chat.id, TimeWorkDayManager().get_message_good_morning())
+                telebot.send_message(message.chat.id, timework_maneger.get_message_good_morning())
                 self.set_default()
             
             case "Доброго вечера (Закончить рабочий день)":
-                telebot.send_message(message.chat.id, TimeWorkDayManager().get_message_good_evening())
-                telebot.send_message(message.chat.id, TimeWorkDayManager().get_statistic_of_day())
+                telebot.send_message(message.chat.id, timework_maneger.get_message_good_evening())
+                telebot.send_message(message.chat.id, timework_maneger.get_statistic_of_day())
                 self.set_default()
 
 

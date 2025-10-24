@@ -2,13 +2,16 @@ from datetime import datetime
 from enum import Enum
 import json
 
+
 class TimesOfDay(Enum):
     morning = 0
     evening = 1
 
 class TimeWorkDayManager:
-    def __init__(self):
+    def __init__(self, user_link):
+        self.user_link = user_link
         self.buffer_link = "buffer.json"
+        self.data_link = "data.json"
         self.local_data_work_time = {
             "current_time": "",
             "current_date": "",
@@ -51,7 +54,7 @@ class TimeWorkDayManager:
 
     
     def get_statistic_of_day(self) -> str:
-        self.local_data_work_time = self.read_from_buffer(self.buffer_link)
+        self.local_data_work_time = self.read_from_buffer(self.buffer_link)[self.user_link]
         
         started_formated_time = self.local_data_work_time["start_day_time"]
         ended_formated_time = self.local_data_work_time["end_day_time"]
@@ -69,18 +72,21 @@ class TimeWorkDayManager:
     def set_current_period_of_time(self, time_of_day: TimesOfDay):
         self.local_data_work_time = self.read_from_buffer(self.buffer_link)
 
-        self.local_data_work_time["current_time"] = datetime.now().strftime("%d/%m/%Y")
-        self.local_data_work_time["current_date"] = datetime.now().strftime("%H:%M:%S")
+        if self.user_link not in self.local_data_work_time:
+            self.local_data_work_time[self.user_link] = {}
+
+        self.local_data_work_time[self.user_link]["current_time"] = datetime.now().strftime("%d/%m/%Y")
+        self.local_data_work_time[self.user_link]["current_date"] = datetime.now().strftime("%H:%M:%S")
         self.period_of_time = datetime.now()
         match(time_of_day):
             case TimesOfDay.morning:
-                self.local_data_work_time["start_day_date"] = datetime.now().strftime("%d/%m/%Y")
-                self.local_data_work_time["start_day_time"] = datetime.now().strftime("%H:%M:%S")
+                self.local_data_work_time[self.user_link]["start_day_date"] = datetime.now().strftime("%d/%m/%Y")
+                self.local_data_work_time[self.user_link]["start_day_time"] = datetime.now().strftime("%H:%M:%S")
                 print("Начало дня установлено")
 
             case TimesOfDay.evening:
-                self.local_data_work_time["end_day_date"] = datetime.now().strftime("%d/%m/%Y")
-                self.local_data_work_time["end_day_time"] = datetime.now().strftime("%H:%M:%S")
+                self.local_data_work_time[self.user_link]["end_day_date"] = datetime.now().strftime("%d/%m/%Y")
+                self.local_data_work_time[self.user_link]["end_day_time"] = datetime.now().strftime("%H:%M:%S")
                 print("Конец дня устновлен")
         
         self.write_to_buffer(self.local_data_work_time, self.buffer_link)

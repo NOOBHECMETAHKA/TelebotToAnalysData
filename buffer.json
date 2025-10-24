@@ -1,8 +1,18 @@
 {
-    "current_time": "19/10/2025",
-    "current_date": "17:28:19",
-    "start_day_date": "19/10/2025",
-    "start_day_time": "10:00:00",
-    "end_day_date": "19/10/2025",
-    "end_day_time": "17:28:19"
+    "CmeTHKa": {
+        "current_time": "20/10/2025",
+        "current_date": "23:51:57",
+        "start_day_date": "20/10/2025",
+        "start_day_time": "23:51:52",
+        "end_day_date": "20/10/2025",
+        "end_day_time": "23:51:57"
+    },
+    "gefter1": {
+        "current_time": "20/10/2025",
+        "current_date": "23:49:17",
+        "start_day_date": "20/10/2025",
+        "start_day_time": "23:49:17",
+        "end_day_date": "20/10/2025",
+        "end_day_time": "23:46:20"
+    }
 }
