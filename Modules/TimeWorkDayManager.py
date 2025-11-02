@@ -1,3 +1,4 @@
+from Modules.DatabaseManager import DataBaseManager
 from datetime import datetime
 from enum import Enum
 import json
@@ -11,7 +12,6 @@ class TimeWorkDayManager:
     def __init__(self, user_link):
         self.user_link = user_link
         self.buffer_link = "buffer.json"
-        self.data_link = "data.json"
         self.local_data_work_time = {
             "current_time": "",
             "current_date": "",
@@ -38,8 +38,11 @@ class TimeWorkDayManager:
         return f"({self.period_of_time.strftime("%H:%M:%S")}) | Доброе утро! Начала рабочего дня установлено)"
     
     def get_message_good_evening(self) -> str:
-        self.set_current_period_of_time(TimesOfDay.evening)
-        return f"({self.period_of_time.strftime("%H:%M:%S")}) | Приятного вечера! Конец рабочего дня)"
+        is_data_corrected = self.set_current_period_of_time(TimesOfDay.evening)
+        if is_data_corrected:
+            return f"({self.period_of_time.strftime("%H:%M:%S")}) | Приятного вечера! Конец рабочего дня)"
+        else:
+            return "Начала рабочего дня не было установлено"
     
 
     def get_hour_minut_defferent_from_datetime(self, started_date: str, started_time: str, ended_date: str, ended_time: str) -> tuple:
@@ -54,42 +57,70 @@ class TimeWorkDayManager:
 
     
     def get_statistic_of_day(self) -> str:
-        self.local_data_work_time = self.read_from_buffer(self.buffer_link)[self.user_link]
-        
-        started_formated_time = self.local_data_work_time["start_day_time"]
-        ended_formated_time = self.local_data_work_time["end_day_time"]
-        
-        message = f"Результаты работы дня:\nНачало работы: {started_formated_time}\nКонец работы: {ended_formated_time}\n"
-        date_diff = self.get_hour_minut_defferent_from_datetime(
-            self.local_data_work_time["start_day_date"],
-            self.local_data_work_time["start_day_time"],
-            self.local_data_work_time["end_day_date"],
-            self.local_data_work_time["end_day_time"]
-        ) 
-        message += f"Длительность рабочего дня: {date_diff["hours"]}:{date_diff["minutes"]}"
+        # Чтение данныех из локального буфера
+        self.local_data_work_time = self.read_from_buffer(self.buffer_link)
+        # Объявление начального сообщения
+        message = ""
+
+        # Проверяет есть ли в локальном буфере текущий пользователь
+        if(self.user_link not in self.local_data_work_time):
+            message = "Сегодня время работы не устанавливалось текущим пользователем"
+        elif "start_day_time" not in self.local_data_work_time[self.user_link] or "start_day_date" not in self.local_data_work_time[self.user_link]:
+            message = "Сегодня время работы не устанавливалось текущим пользователем"
+        else:
+            # Получение буфера текущего пользователя
+            self.local_data_work_time = self.local_data_work_time[self.user_link]
+            # Установка перенных для записи
+            started_formated_time = self.local_data_work_time["start_day_time"]
+            ended_formated_time = self.local_data_work_time["end_day_time"]
+
+            message = f"Результаты работы дня:\nНачало работы: {started_formated_time}\nКонец работы: {ended_formated_time}\n"
+            date_diff = self.get_hour_minut_defferent_from_datetime(
+                self.local_data_work_time["start_day_date"],
+                self.local_data_work_time["start_day_time"],
+                self.local_data_work_time["end_day_date"],
+                self.local_data_work_time["end_day_time"]
+            ) 
+            message += f"Длительность рабочего дня: {date_diff["hours"]} (час.), {date_diff["minutes"]} (минут.)"
         return message
     
-    def set_current_period_of_time(self, time_of_day: TimesOfDay):
+    # Установка времени в локальное хранилище в зависимости от диапозона времени
+    def set_current_period_of_time(self, time_of_day: TimesOfDay) -> bool:
+        is_data_corrected = True
+        # Получение текущего времени из буфера
         self.local_data_work_time = self.read_from_buffer(self.buffer_link)
 
+        # Если полученные данные из буфера по корретному пользователю не существуют устанавливаем текущий массив
         if self.user_link not in self.local_data_work_time:
             self.local_data_work_time[self.user_link] = {}
 
+        # Установка текущего времени в буфер
         self.local_data_work_time[self.user_link]["current_time"] = datetime.now().strftime("%d/%m/%Y")
         self.local_data_work_time[self.user_link]["current_date"] = datetime.now().strftime("%H:%M:%S")
+        
+        # Установка текущего времени в оперативную памятья для дальнейшего вывода
         self.period_of_time = datetime.now()
+
+        # В зависимости от текущего положения времени
         match(time_of_day):
             case TimesOfDay.morning:
+                # Запись утренного времени и удалиние старых позиций
                 self.local_data_work_time[self.user_link]["start_day_date"] = datetime.now().strftime("%d/%m/%Y")
                 self.local_data_work_time[self.user_link]["start_day_time"] = datetime.now().strftime("%H:%M:%S")
-                print("Начало дня установлено")
+                self.local_data_work_time[self.user_link]["end_day_date"] = ""
+                self.local_data_work_time[self.user_link]["end_day_time"] = ""
 
-            case TimesOfDay.evening:
+            case TimesOfDay.evening:                
                 self.local_data_work_time[self.user_link]["end_day_date"] = datetime.now().strftime("%d/%m/%Y")
                 self.local_data_work_time[self.user_link]["end_day_time"] = datetime.now().strftime("%H:%M:%S")
-                print("Конец дня устновлен")
+
+                if "start_day_date" not in self.local_data_work_time[self.user_link]:
+                    is_data_corrected = False
+                if "start_day_time" not in self.local_data_work_time[self.user_link]:
+                    is_data_corrected = False
         
         self.write_to_buffer(self.local_data_work_time, self.buffer_link)
+        return is_data_corrected
 
         
     
